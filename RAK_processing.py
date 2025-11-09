@@ -213,8 +213,8 @@ def extract_dip_features(dip, baseline=200):
 
 
 if __name__ == "__main__":
-    file_path = r"C:\EPICS\RAK_DATA_F2025 - First recording.TXT"
-    output_csv = r"c:\EPICS\RAK2.csv"
+    file_path = r"RAK_DATA_F2025.TXT"
+    output_csv = file_path.replace(".TXT", ".csv")
     
     print("=" * 70)
     print("RAK Ultrasonic Dip Feature Extraction")
