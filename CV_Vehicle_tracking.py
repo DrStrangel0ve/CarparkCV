@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import torch
 
 # Part 2: Run CV algorithm
 print("Starting vehicle detection analysis...")
@@ -15,6 +16,15 @@ try:
 except:
     model = YOLO("yolov8n.pt")  # Fallback to YOLOv8
     print("Using YOLOv8 model (YOLOv12 not available)")
+
+# Enable GPU acceleration if available
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+if device == "cuda":
+    print(f"CUDA version: {torch.version.cuda}")
+    print(f"GPU count: {torch.cuda.device_count()}")
+    print(f"GPU device name: {torch.cuda.get_device_name(0)}")
+model.to(device)
 
 # Define detection classes from COCO dataset
 DETECTION_CLASSES = {
@@ -592,7 +602,7 @@ def analyze_detection_statistics(df):
 # Main execution
 if __name__ == "__main__":
     # Run object detection on your video
-    video_path = "C:/EPICS/CarparkRecording2Cropped.mp4"
+    video_path = "C:\\Users\\Arnav\\10-23-25 Starts at 14 Minutes.MP4"
     
     print("Starting real-time object detection (people, bicycles, vehicles)...")
     print("First, select the carpark area to monitor...")
@@ -611,10 +621,10 @@ if __name__ == "__main__":
         print()
         
         # Run with real-time display and ROI starting at 3:30
-        results_df = detect_objects_in_video(video_path, output_csv="detection_results.csv", show_realtime=True, roi_coords=roi_coords, start_time_seconds=210)
+        results_df = detect_objects_in_video(video_path, output_csv="detection_results.csv", show_realtime=True, roi_coords=roi_coords, start_time_seconds=0)
     else:
         print("No carpark area selected. Processing entire frame...")
-        results_df = detect_objects_in_video(video_path, output_csv="detection_results.csv", show_realtime=True, start_time_seconds=210)
+        results_df = detect_objects_in_video(video_path, output_csv="detection_results.csv", show_realtime=True, start_time_seconds=0)
     
     # After real-time analysis, ask if user wants to create additional visualizations
     print("\nReal-time analysis complete!")
