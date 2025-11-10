@@ -239,8 +239,8 @@ class PeakAligner:
             self.rakdata['start_time'],
             self.rakdata['max_depth']
         )):
-            # Convert RAK time to CV time
-            cv_time = rak_time * self.alignment_offset + self.cv_data['time_seconds'].min()
+            # RAK time is already in seconds, apply scale offset
+            cv_time = rak_time * self.alignment_offset
             
             # Find closest CV frame
             closest_idx = (merged['time_seconds'] - cv_time).abs().idxmin()
@@ -253,7 +253,7 @@ class PeakAligner:
         # Add RAK depth column (interpolate to each CV frame)
         merged['rak_depth'] = np.interp(
             merged['time_seconds'],
-            self.rakdata['start_time'] * self.alignment_offset + self.cv_data['time_seconds'].min(),
+            self.rakdata['start_time'] * self.alignment_offset,
             self.rakdata['max_depth']
         )
         
@@ -296,7 +296,7 @@ class PeakAligner:
         ax2.plot(time, rak_depth_max - self.merged_aligned['rak_depth'], 'b-', linewidth=2)
         
         # Mark RAK dips
-        dip_times = self.rakdata['start_time'] * self.alignment_offset + self.cv_data['time_seconds'].min()
+        dip_times = self.rakdata['start_time'] * self.alignment_offset
         dip_depths = rak_depth_max - self.rakdata['max_depth']
         ax2.scatter(dip_times, dip_depths, color='red', s=100, marker='^', label='RAK Dips', zorder=5)
         
@@ -358,6 +358,74 @@ class PeakAligner:
         
         return correlation
     
+    def create_rak_centric_report(self) -> pd.DataFrame:
+        """
+        Create a RAK-centric report with a single detection type column.
+        
+        Returns:
+            DataFrame with RAK data as base + 'detection_type' column
+            detection_type values: 'Vehicle', 'People', 'Bicycle', or 'None'
+        """
+        if self.merged_aligned is None:
+            raise ValueError("No aligned data. Call create_aligned_dataset() first")
+        
+        print("Creating RAK-centric report with detection types...")
+        
+        # Start with RAK data
+        rak_report = self.rakdata.copy()
+        
+        # Add detection type column for each dip
+        detection_types = []
+        
+        for idx, row in rak_report.iterrows():
+            rak_time = row['start_time']
+            
+            # RAK time is already in seconds, apply scale offset
+            cv_time = rak_time * self.alignment_offset
+            
+            # Find closest CV frame
+            closest_cv_idx = (self.cv_data['time_seconds'] - cv_time).abs().idxmin()
+            
+            # Get detections at this time
+            cv_row = self.cv_data.iloc[closest_cv_idx]
+            
+            vehicles = int(cv_row['vehicles_in_frame'])
+            people = int(cv_row['people_in_frame'])
+            bicycles = int(cv_row['bicycles_in_frame'])
+            
+            # Determine primary detection type (priority: Vehicle > People > Bicycle > None)
+            if vehicles > 0:
+                detection_type = 'Vehicle'
+            elif people > 0:
+                detection_type = 'People'
+            elif bicycles > 0:
+                detection_type = 'Bicycle'
+            else:
+                detection_type = 'None'
+            
+            detection_types.append(detection_type)
+        
+        # Add detection type column to RAK report
+        rak_report['detection_type'] = detection_types
+        
+        print(f"✓ RAK-centric report created with {len(rak_report)} dip events")
+        print(f"  Detection type counts:")
+        print(f"    Vehicle: {sum(1 for d in detection_types if d == 'Vehicle')}")
+        print(f"    People: {sum(1 for d in detection_types if d == 'People')}")
+        print(f"    Bicycle: {sum(1 for d in detection_types if d == 'Bicycle')}")
+        print(f"    None: {sum(1 for d in detection_types if d == 'None')}")
+        print()
+        
+        return rak_report
+    
+    def save_rak_centric_data(self, output_path: str = "rak_with_detections.csv") -> None:
+        """Save RAK-centric report to CSV."""
+        rak_report = self.create_rak_centric_report()
+        rak_report.to_csv(output_path, index=False)
+        print(f"✓ RAK-centric report saved to: {output_path}")
+        print()
+        return rak_report
+    
     def save_aligned_data(self, output_path: str = "aligned_cv_rak.csv") -> None:
         """Save aligned dataset to CSV."""
         if self.merged_aligned is None:
@@ -388,7 +456,7 @@ def main():
     
     # Paths to your data
     cv_csv = "detection_results.csv"
-    rak_csv = "RAK_DATA_F2025_FEATURES.csv"
+    rak_csv = "RAK_DATA_F2025.csv"
     
     try:
         # Initialize aligner
@@ -417,6 +485,15 @@ def main():
         
         # Save aligned data
         aligner.save_aligned_data("aligned_cv_rak.csv")
+        
+        # Save RAK-centric report with detections
+        rak_report = aligner.save_rak_centric_data("rak_with_detections.csv")
+        
+        print("=" * 80)
+        print("RAK-CENTRIC REPORT PREVIEW (first 10 rows)")
+        print("=" * 80)
+        print(rak_report[['start_time', 'end_time', 'max_depth', 'detection_type']].head(10))
+        print()
         
         # Print summary
         summary = aligner.get_summary()

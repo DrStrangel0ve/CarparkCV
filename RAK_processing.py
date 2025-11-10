@@ -159,14 +159,53 @@ def extract_arc_length(values):
     return arc_length
 
 
-def extract_dip_features(dip, baseline=200):
+def calculate_rolling_baseline(timearr, dip_start_idx, window_seconds=100):
+    """
+    Calculate rolling baseline as the 95th percentile distance value in the past window_seconds.
+    This represents the baseline (no object) distance at this point in time.
+    
+    Parameters:
+    - timearr: list of [timestamp, distance] pairs
+    - dip_start_idx: index of current dip
+    - window_seconds: time window in seconds to look back (converted from raw time units)
+    
+    Returns:
+    - rolling_baseline: 95th percentile distance in the window (baseline distance)
+    """
+    dip_start_time = timearr[dip_start_idx][0]
+    
+    # Find all data points within the window
+    window_start_time = dip_start_time - window_seconds
+    
+    # Look back from dip start to find baseline
+    baseline_values = []
+    for i in range(max(0, dip_start_idx - 1000), dip_start_idx):  # Look back up to 1000 frames
+        if timearr[i][0] >= window_start_time:
+            baseline_values.append(timearr[i][1])
+    
+    # Return 95th percentile in window as baseline (excludes occasional spikes)
+    if baseline_values:
+        return np.percentile(baseline_values, 95)
+    else:
+        return 200  # Fallback to default baseline
+
+
+def extract_dip_features(dip, baseline=None):
     """
     Extract all features for a single dip.
+    
+    Args:
+        dip: dict with dip data
+        baseline: optional baseline distance (if None, uses max value in dip as proxy)
     
     Returns: dict with all requested features
     """
     values = np.array(dip['values'])
     timestamps = dip['timestamps']
+    
+    # Use provided baseline, or estimate as max value in the dip region
+    if baseline is None:
+        baseline = np.max(values)
     
     # Baseline distance (when no car)
     max_depth = baseline - np.min(values)
@@ -231,10 +270,12 @@ if __name__ == "__main__":
     print(f"      Found {len(dips)} valid dips")
     
     # Extract features
-    print(f"\n[3/4] Extracting features for each dip")
+    print(f"\n[3/4] Extracting features for each dip (with rolling 100s baseline)")
     all_features = []
     for i, dip in enumerate(dips):
-        features = extract_dip_features(dip)
+        # Calculate rolling baseline for this dip
+        rolling_baseline = calculate_rolling_baseline(timearr, dip['start_idx'], window_seconds=100)
+        features = extract_dip_features(dip, baseline=rolling_baseline)
         all_features.append(features)
         if (i + 1) % 10 == 0:
             print(f"      Processed {i + 1}/{len(dips)} dips")
@@ -242,6 +283,12 @@ if __name__ == "__main__":
     # Export to CSV
     print(f"\n[4/4] Exporting to CSV: {output_csv}")
     df = pd.DataFrame(all_features)
+    
+    # Convert time values from milliseconds to seconds
+    df['start_time'] = df['start_time'] / 1000.0
+    df['end_time'] = df['end_time'] / 1000.0
+    df['duration'] = df['duration'] / 1000.0
+    
     df.to_csv(output_csv, index=False)
     print(f"      Exported {len(df)} dips with features")
     
