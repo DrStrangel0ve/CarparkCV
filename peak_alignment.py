@@ -202,6 +202,286 @@ class PeakAligner:
         self.alignment_offset = best_scale
         return best_scale
     
+    def find_best_overlapping_region(self) -> Dict:
+        """
+        Find the best overlapping region between RAK and CV data by testing
+        different time scale factors and finding which maximizes peak alignment.
+        
+        Returns:
+            Dict with: scale_factor, offset_start_rak, num_rak_dips_in_cv_range, correlation
+        """
+        if self.cv_peaks is None or self.rakdata_peaks is None:
+            raise ValueError("Must call extract_cv_peaks() and extract_rakdata_peaks() first")
+        
+        print("Finding Best Overlapping Region:")
+        print(f"  CV time range: {self.cv_data['time_seconds'].min():.2f}s - {self.cv_data['time_seconds'].max():.2f}s")
+        print(f"  RAK dips: {len(self.rakdata_peaks)} total")
+        print()
+        
+        best_results = {
+            'scale_factor': 1.0,
+            'offset_start_rak': 0,
+            'num_rak_dips_in_cv_range': 0,
+            'correlation': 0,
+            'details': []
+        }
+        
+        cv_min = self.cv_data['time_seconds'].min()
+        cv_max = self.cv_data['time_seconds'].max()
+        cv_duration = cv_max - cv_min
+        
+        # Try different scale factors
+        for scale in np.linspace(0.1, 5.0, 100):
+            # Try different start offsets for RAK data
+            for start_offset in np.linspace(-1000, 1000, 30):
+                # Convert RAK times with this scale and offset
+                rak_times_converted = self.rakdata_peaks * scale + start_offset
+                
+                # Count how many RAK dips fall within CV range
+                dips_in_range = np.sum((rak_times_converted >= cv_min) & (rak_times_converted <= cv_max))
+                
+                if dips_in_range == 0:
+                    continue
+                
+                # Create signals for this configuration
+                cv_signal = np.zeros(len(self.cv_data))
+                cv_signal[self.cv_peaks] = 1
+                
+                rak_signal = np.zeros(len(self.cv_data))
+                for rak_time in rak_times_converted:
+                    if cv_min <= rak_time <= cv_max:
+                        closest_idx = (self.cv_data['time_seconds'] - rak_time).abs().idxmin()
+                        if 0 <= closest_idx < len(rak_signal):
+                            rak_signal[closest_idx] = 1
+                
+                # Compute correlation
+                correlation = np.sum(cv_signal * rak_signal) / (np.sum(cv_signal) + np.sum(rak_signal) + 1e-6)
+                
+                # Track best result
+                if dips_in_range > best_results['num_rak_dips_in_cv_range'] or \
+                   (dips_in_range == best_results['num_rak_dips_in_cv_range'] and correlation > best_results['correlation']):
+                    best_results = {
+                        'scale_factor': scale,
+                        'offset_start_rak': start_offset,
+                        'num_rak_dips_in_cv_range': dips_in_range,
+                        'correlation': correlation,
+                        'dips_in_range': dips_in_range
+                    }
+        
+        print(f"  Best Configuration Found:")
+        print(f"    Scale factor: {best_results['scale_factor']:.6f}")
+        print(f"    Start offset: {best_results['offset_start_rak']:.2f}s")
+        print(f"    RAK dips in CV range: {best_results['num_rak_dips_in_cv_range']}/{len(self.rakdata_peaks)}")
+        print(f"    Correlation score: {best_results['correlation']:.4f}")
+        print()
+        
+        self.alignment_offset = best_results['scale_factor']
+        return best_results
+    
+    def align_by_event_distribution(self) -> Dict:
+        """
+        Align RAK and CV data by matching their event distributions and durations.
+        
+        Strategy:
+        1. Calculate average time between CV peaks and their durations
+        2. Calculate average time between RAK dips and their durations
+        3. Find scale factor that matches these distributions
+        4. Find offset that best aligns the peak patterns
+        5. Prioritize alignments where events are touching/overlapping
+        
+        Returns:
+            Dict with optimal scale_factor, offset, and quality metrics
+        """
+        if self.cv_peaks is None or self.rakdata_peaks is None:
+            raise ValueError("Must call extract_cv_peaks() and extract_rakdata_peaks() first")
+        
+        print("Event Distribution & Duration Based Alignment:")
+        
+        # Calculate temporal statistics for CV peaks
+        cv_times = self.cv_data.iloc[self.cv_peaks]['time_seconds'].values
+        cv_peak_intervals = np.diff(cv_times)
+        cv_avg_interval = np.mean(cv_peak_intervals) if len(cv_peak_intervals) > 0 else 1.0
+        cv_peak_density = len(self.cv_peaks) / (self.cv_data['time_seconds'].max() - self.cv_data['time_seconds'].min())
+        
+        print(f"  CV Peak Statistics:")
+        print(f"    Total peaks: {len(self.cv_peaks)}")
+        print(f"    Average interval: {cv_avg_interval:.2f}s")
+        print(f"    Peak density: {cv_peak_density:.6f} peaks/sec")
+        print(f"    Time span: {cv_times.min():.2f}s to {cv_times.max():.2f}s")
+        print()
+        
+        # Calculate temporal statistics for RAK dips
+        rak_peak_intervals = np.diff(self.rakdata_peaks)
+        rak_avg_interval = np.mean(rak_peak_intervals) if len(rak_peak_intervals) > 0 else 1.0
+        rak_duration = self.rakdata_peaks.max() - self.rakdata_peaks.min()
+        rak_peak_density = len(self.rakdata_peaks) / rak_duration if rak_duration > 0 else 0
+        
+        print(f"  RAK Dip Statistics:")
+        print(f"    Total dips: {len(self.rakdata_peaks)}")
+        print(f"    Average interval: {rak_avg_interval:.2f}s")
+        print(f"    Peak density: {rak_peak_density:.6f} dips/sec")
+        print(f"    Time span: {self.rakdata_peaks.min():.2f}s to {self.rakdata_peaks.max():.2f}s")
+        print()
+        
+        # Get event durations from RAK data
+        rak_durations = self.rakdata['duration'].values
+        rak_avg_duration = np.mean(rak_durations)
+        print(f"    Average RAK dip duration: {rak_avg_duration:.2f}s")
+        
+        # Estimate CV event durations by looking at distance between consecutive peaks
+        if len(cv_peak_intervals) > 0:
+            cv_avg_duration = np.mean(cv_peak_intervals) * 0.3  # Rough estimate: peaks last ~30% of interval
+        else:
+            cv_avg_duration = 1.0
+        print(f"    Estimated CV peak duration: {cv_avg_duration:.2f}s")
+        print()
+        
+        # Scale factor to match event frequencies
+        scale_by_duration = (self.cv_data['time_seconds'].max() - self.cv_data['time_seconds'].min()) / rak_duration
+        scale_by_density = cv_peak_density / rak_peak_density if rak_peak_density > 0 else 1.0
+        scale_by_interval = cv_avg_interval / rak_avg_interval if rak_avg_interval > 0 else 1.0
+        
+        print(f"  Scale Factor Candidates:")
+        print(f"    By duration match: {scale_by_duration:.6f}")
+        print(f"    By density match: {scale_by_density:.6f}")
+        print(f"    By interval match: {scale_by_interval:.6f}")
+        print()
+        
+        # Test scales around these candidates
+        scale_candidates = [scale_by_duration, scale_by_density, scale_by_interval,
+                           (scale_by_duration + scale_by_density + scale_by_interval) / 3,
+                           scale_by_duration * 0.9, scale_by_duration * 1.1,
+                           scale_by_interval * 0.9, scale_by_interval * 1.1]
+        
+        best_alignment = {
+            'scale_factor': 1.0,
+            'offset': 0,
+            'num_dips_in_range': 0,
+            'correlation': 0,
+            'rmse': float('inf'),
+            'touching_events': 0,
+            'overlapping_events': 0
+        }
+        
+        cv_min = self.cv_data['time_seconds'].min()
+        cv_max = self.cv_data['time_seconds'].max()
+        cv_range = max(cv_max - cv_min, 1e-6)
+        cv_times_norm = (cv_times - cv_min) / cv_range
+        cv_times_norm_sorted = np.sort(cv_times_norm)
+        rak_time_min = self.rakdata_peaks.min()
+        rak_time_max = self.rakdata_peaks.max()
+        
+        for scale in scale_candidates:
+            # Test different offsets for this scale
+            tail_aligned_offset = cv_max - (rak_time_max * scale)
+            head_aligned_offset = cv_min - (rak_time_min * scale)
+            offset_candidates = np.linspace(tail_aligned_offset - 120, tail_aligned_offset + 120, 50)
+            offset_candidates = np.concatenate([
+                offset_candidates,
+                np.linspace(head_aligned_offset - 60, head_aligned_offset + 60, 20),
+                np.linspace(-200, 200, 20)
+            ])
+
+            for offset in offset_candidates:
+                # Convert RAK times and durations
+                rak_times_converted = self.rakdata_peaks * scale + offset
+                rak_durations_scaled = rak_durations * scale
+                
+                # Count dips in range
+                dips_in_range = np.sum((rak_times_converted >= cv_min) & (rak_times_converted <= cv_max))
+                
+                if dips_in_range == 0:
+                    continue
+                
+                # Create binary signals
+                cv_signal = np.zeros(len(self.cv_data))
+                cv_signal[self.cv_peaks] = 1
+                
+                rak_signal = np.zeros(len(self.cv_data))
+                for rak_time in rak_times_converted:
+                    if cv_min <= rak_time <= cv_max:
+                        closest_idx = (self.cv_data['time_seconds'] - rak_time).abs().idxmin()
+                        if 0 <= closest_idx < len(rak_signal):
+                            rak_signal[closest_idx] = 1
+                
+                # Calculate correlation
+                correlation = np.sum(cv_signal * rak_signal) / (np.sum(cv_signal) + np.sum(rak_signal) + 1e-6)
+                
+                # Calculate RMSE between peak positions (normalized)
+                rak_times_norm = (rak_times_converted - cv_min) / cv_range
+                rak_times_in_range = rak_times_norm[(rak_times_norm >= 0) & (rak_times_norm <= 1)]
+
+                if len(rak_times_in_range) > 0 and len(cv_times_norm_sorted) > 0:
+                    rak_sorted = np.sort(rak_times_in_range)
+                    min_len = min(len(cv_times_norm_sorted), len(rak_sorted))
+                    if min_len > 0:
+                        rmse = np.sqrt(np.mean((cv_times_norm_sorted[:min_len] - rak_sorted[:min_len])**2))
+                    else:
+                        rmse = float('inf')
+                else:
+                    rmse = float('inf')
+                
+                # Count touching and overlapping events
+                touching_pairs = set()
+                overlapping_pairs = set()
+                
+                for cv_peak_idx in self.cv_peaks:
+                    cv_peak_time = self.cv_data.iloc[cv_peak_idx]['time_seconds']
+                    cv_peak_start = cv_peak_time - cv_avg_duration / 2
+                    cv_peak_end = cv_peak_time + cv_avg_duration / 2
+                    
+                    for i, (rak_time, rak_dur) in enumerate(zip(rak_times_converted, rak_durations_scaled)):
+                        if cv_min <= rak_time <= cv_max:
+                            rak_start = rak_time
+                            rak_end = rak_time + rak_dur
+                            
+                            # Check if overlapping
+                            if not (cv_peak_end < rak_start or rak_end < cv_peak_start):
+                                overlapping_pairs.add((cv_peak_idx, i))
+                            
+                            # Check if touching based on event durations
+                            touch_threshold = max(cv_avg_duration, rak_dur)
+                            if (abs(cv_peak_end - rak_start) <= touch_threshold or
+                                abs(rak_end - cv_peak_start) <= touch_threshold):
+                                touching_pairs.add((cv_peak_idx, i))
+
+                overlapping_count = len(overlapping_pairs)
+                touching_count = len(touching_pairs)
+
+                # Skip alignments with no real overlaps
+                if overlapping_count == 0:
+                    continue
+                
+                # Score: prioritize touching/overlapping events, then correlation
+                score = overlapping_count * 100 + touching_count * 10 + correlation
+                
+                # Update best if better
+                if score > (best_alignment['overlapping_events'] * 100 + best_alignment['touching_events'] * 10 + best_alignment['correlation']):
+                    best_alignment = {
+                        'scale_factor': scale,
+                        'offset': offset,
+                        'num_dips_in_range': dips_in_range,
+                        'correlation': correlation,
+                        'rmse': rmse,
+                        'touching_events': touching_count,
+                        'overlapping_events': overlapping_count,
+                        'score': score
+                    }
+        
+        print(f"  Best Alignment Found:")
+        print(f"    Scale factor: {best_alignment['scale_factor']:.6f}")
+        print(f"    Offset: {best_alignment['offset']:.2f}s")
+        print(f"    RAK dips in CV range: {best_alignment['num_dips_in_range']}/{len(self.rakdata_peaks)}")
+        print(f"    Correlation: {best_alignment['correlation']:.4f}")
+        print(f"    RMSE: {best_alignment['rmse']:.6f}")
+        print(f"    Overlapping events: {best_alignment['overlapping_events']}")
+        print(f"    Touching events: {best_alignment['touching_events']}")
+        print(f"    Overall score: {best_alignment['score']:.2f}")
+        print()
+        
+        self.alignment_offset = best_alignment['scale_factor']
+        return best_alignment
+    
     def align_by_manual_offset(self, offset_seconds: float) -> None:
         """
         Manually specify time offset for alignment.
@@ -471,8 +751,11 @@ def main():
         # Estimate time scale
         time_scale = aligner.estimate_time_scale()
         
-        # Align using cross-correlation
-        offset = aligner.align_by_cross_correlation()
+        # Align by event distribution (matching temporal patterns)
+        best_alignment = aligner.align_by_event_distribution()
+        
+        # Create aligned dataset with best alignment
+        offset = best_alignment['scale_factor']
         
         # Create aligned dataset
         aligned_data = aligner.create_aligned_dataset()

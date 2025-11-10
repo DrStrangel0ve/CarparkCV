@@ -159,6 +159,33 @@ def extract_arc_length(values):
     return arc_length
 
 
+def trim_initial_stable_period(timearr, baseline_value=220, tolerance=5,
+                               stable_duration_seconds=5):
+    """Trim initial samples until readings stay near baseline for the desired duration."""
+    if not timearr:
+        return timearr
+
+    threshold = baseline_value - tolerance
+    stable_duration_ms = stable_duration_seconds * 1000
+    window_start_idx = None
+
+    for idx, (timestamp, distance) in enumerate(timearr):
+        if distance >= threshold:
+            if window_start_idx is None:
+                window_start_idx = idx
+            if timestamp - timearr[window_start_idx][0] >= stable_duration_ms:
+                if window_start_idx > 0:
+                    print(
+                        f"      Trimming first {window_start_idx} samples "
+                        f"({timestamp - timearr[0][0]} raw time units) for warm-up"
+                    )
+                return timearr[window_start_idx:]
+        else:
+            window_start_idx = None
+
+    return timearr
+
+
 def calculate_rolling_baseline(timearr, dip_start_idx, window_seconds=100):
     """
     Calculate rolling baseline as the 95th percentile distance value in the past window_seconds.
@@ -209,6 +236,7 @@ def extract_dip_features(dip, baseline=None):
     
     # Baseline distance (when no car)
     max_depth = baseline - np.min(values)
+    max_depth = min(max_depth, 220.0)
     avg_depth = baseline - np.mean(values)
     
     # Area under curve (integral of distance below baseline)
@@ -220,7 +248,7 @@ def extract_dip_features(dip, baseline=None):
     
     # Arc length
     arc_len = extract_arc_length(values)
-    
+    #464656
     # Time metrics
     time_start = timestamps[0]
     time_end = timestamps[-1]
@@ -252,7 +280,7 @@ def extract_dip_features(dip, baseline=None):
 
 
 if __name__ == "__main__":
-    file_path = r"RAK_DATA_F2025.TXT"
+    file_path = r"RAK_DATA_F2025_Test2.TXT"
     output_csv = file_path.replace(".TXT", ".csv")
     
     print("=" * 70)
@@ -263,6 +291,11 @@ if __name__ == "__main__":
     print(f"\n[1/4] Loading data from {file_path}")
     timearr = read_rak_data(file_path)
     print(f"      Loaded {len(timearr)} data points")
+
+    # Trim initial warm-up period where readings are below baseline
+    timearr = trim_initial_stable_period(timearr, baseline_value=220, tolerance=5,
+                                         stable_duration_seconds=5)
+    print(f"      Using {len(timearr)} data points after warm-up trim")
     
     # Find dips
     print(f"\n[2/4] Finding dips (threshold < 200, 5-200 frames)")
@@ -282,13 +315,32 @@ if __name__ == "__main__":
     
     # Export to CSV
     print(f"\n[4/4] Exporting to CSV: {output_csv}")
-    df = pd.DataFrame(all_features)
-    
-    # Convert time values from milliseconds to seconds
-    df['start_time'] = df['start_time'] / 1000.0
-    df['end_time'] = df['end_time'] / 1000.0
-    df['duration'] = df['duration'] / 1000.0
-    
+
+    # Expected feature columns (keeps output consistent even if no dips were found)
+    expected_columns = [
+        'start_idx', 'end_idx', 'start_time', 'end_time', 'duration',
+        'dip_length_frames', 'area_under_curve',
+        'upslope_count', 'upslope_total_length', 'upslope_avg_length',
+        'flatslope_length', 'downslope_count', 'downslope_total_length', 'downslope_avg_length',
+        'arc_length', 'max_depth', 'avg_depth'
+    ]
+
+    # Create DataFrame; if no features were extracted this will create an empty df with expected columns
+    if all_features:
+        df = pd.DataFrame(all_features)
+        # Ensure all expected columns exist in df (missing keys become NaN)
+        for col in expected_columns:
+            if col not in df.columns:
+                df[col] = pd.NA
+    else:
+        df = pd.DataFrame(columns=expected_columns)
+
+    # Convert time values from milliseconds to seconds when present
+    for tcol in ('start_time', 'end_time', 'duration'):
+        if tcol in df.columns:
+            # safe division even for empty series
+            df[tcol] = df[tcol].astype('float64') / 1000.0
+
     df.to_csv(output_csv, index=False)
     print(f"      Exported {len(df)} dips with features")
     

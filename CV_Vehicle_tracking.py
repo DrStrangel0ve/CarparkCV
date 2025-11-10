@@ -602,7 +602,7 @@ def analyze_detection_statistics(df):
 # Main execution
 if __name__ == "__main__":
     # Run object detection on your video
-    video_path = "C:\\Users\\Arnav\\10-23-25 Starts at 14 Minutes.MP4"
+    video_path = "C:\\Users\\Arnav\\Footage2.MOV"
     
     print("Starting real-time object detection (people, bicycles, vehicles)...")
     print("First, select the carpark area to monitor...")
