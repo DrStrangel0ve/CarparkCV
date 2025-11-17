@@ -14,7 +14,6 @@ from typing import Iterable, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
 
 
 @dataclass
@@ -111,6 +110,32 @@ def load_trimmed_rak_series(config: MappingConfig) -> tuple[np.ndarray, np.ndarr
     times_seconds = trimmed_times / 1000.0
     return times_seconds, trimmed_values
 
+def _simple_peak_indices(values: np.ndarray, threshold: float, min_separation: int) -> np.ndarray:
+    """Return indices of local maxima above a threshold without SciPy."""
+    arr = np.asarray(values, dtype=float)
+    count = arr.size
+    if count < 3:
+        return np.empty(0, dtype=int)
+
+    separation = max(int(min_separation), 1)
+    indices: list[int] = []
+
+    for idx in range(1, count - 1):
+        current = arr[idx]
+        if current < threshold:
+            continue
+        if current <= arr[idx - 1] or current <= arr[idx + 1]:
+            continue
+
+        if indices and idx - indices[-1] < separation:
+            if current > arr[indices[-1]]:
+                indices[-1] = idx
+            continue
+
+        indices.append(idx)
+
+    return np.asarray(indices, dtype=int)
+
 
 def extract_cv_vehicle_peaks(cv_path: Path, prominence_ratio: float, distance_frames: int) -> pd.DataFrame:
     cv = pd.read_csv(cv_path)
@@ -120,11 +145,7 @@ def extract_cv_vehicle_peaks(cv_path: Path, prominence_ratio: float, distance_fr
         raise ValueError("CV data contains no vehicle detections (all zeros)")
 
     prominence = vehicle_series.max() * prominence_ratio
-    peak_indices, properties = find_peaks(
-        vehicle_series,
-        prominence=prominence,
-        distance=distance_frames,
-    )
+    peak_indices = _simple_peak_indices(vehicle_series, threshold=prominence, min_separation=distance_frames)
 
     peaks_df = cv.iloc[peak_indices].copy()
     peaks_df = peaks_df[["time_seconds", "vehicles_in_frame", "frame_number"]]
