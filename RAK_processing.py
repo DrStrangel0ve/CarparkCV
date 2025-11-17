@@ -1,10 +1,12 @@
-"""
-RAK Data Processing - Extract ultrasonic dip features
-"""
+"""RAK Data Processing - Extract ultrasonic dip features."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import signal
 
 def read_rak_data(file_path):
     """Read RAK data file and return time-distance pairs"""
@@ -278,10 +280,25 @@ def extract_dip_features(dip, baseline=None):
     return features
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Extract ultrasonic dip features from RAK logs.")
+    parser.add_argument(
+        "--input",
+        default="RAK_DATA_F2025_Test2.TXT",
+        help="Path to the raw RAK TXT file (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Optional CSV output path. Defaults to replacing .TXT with .csv beside the input file.",
+    )
+    return parser.parse_args()
 
-if __name__ == "__main__":
-    file_path = r"RAK_DATA_F2025_Test2.TXT"
-    output_csv = file_path.replace(".TXT", ".csv")
+
+def main() -> None:
+    args = parse_args()
+    file_path = Path(args.input)
+    output_csv = Path(args.output) if args.output else file_path.with_suffix(".csv")
     
     print("=" * 70)
     print("RAK Ultrasonic Dip Feature Extraction")
@@ -289,7 +306,7 @@ if __name__ == "__main__":
     
     # Load data
     print(f"\n[1/4] Loading data from {file_path}")
-    timearr = read_rak_data(file_path)
+    timearr = read_rak_data(str(file_path))
     print(f"      Loaded {len(timearr)} data points")
 
     # Trim initial warm-up period where readings are below baseline
@@ -353,4 +370,8 @@ if __name__ == "__main__":
     print("SAMPLE DIPS (first 5)")
     print("=" * 70)
     print(df.head())
+
+
+if __name__ == "__main__":
+    main()
 
