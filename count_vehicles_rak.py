@@ -57,7 +57,7 @@ def count_vehicles(file_path, start_time_ms=0):
     MIN_DIP_TIME_SEC = 0.5
 
     # MaxDipTime: Maximum length of dips to filter out parked cars/artifacts
-    MAX_DIP_TIME_SEC = 60
+    MAX_DIP_TIME_SEC = 10
     
     # MergeGap: Time to wait for another dip before closing (0.3s from flowchart text)
     MERGE_GAP_SEC = 0.3
