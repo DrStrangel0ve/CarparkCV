@@ -1,0 +1,455 @@
+<mxfile host="Electron" modified="2025-11-30T00:00:00.000Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.8 Chrome/114.0.5735.289 Electron/25.5.0 Safari/537.36" etag="123456789" version="21.6.8" type="device">
+  <diagram id="MainPipeline" name="Overarching Pipeline">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Inputs -->
+        <mxCell id="101" value="Video File (.mp4/.mov)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="102" value="RAK Data (.txt)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="480" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Step 1 -->
+        <mxCell id="103" value="CV_Vehicle_tracking.py&#xa;(YOLO Detection)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="260" y="160" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="104" value="detection_results.csv" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="280" y="260" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 2 -->
+        <mxCell id="105" value="SyncVis.py&#xa;(Synchronization)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="360" y="360" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="106" value="detection_results_with_depth.csv" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="460" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 3 -->
+        <mxCell id="107" value="dip_analyzer.py&#xa;(Feature Extraction)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="360" y="560" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="108" value="dip_analysis_results.csv" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="660" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 4 -->
+        <mxCell id="109" value="dip_classifier.py&#xa;(ML Classification)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="360" y="760" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="Final Output&#xa;(dip_analysis_results_with_ml.csv)" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="340" y="860" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="111" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="101" target="103">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="112" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="103" target="104">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="113" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="104" target="105">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="114" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="102" target="105">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="340" />
+              <mxPoint x="480" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="115" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="105" target="106">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="116" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="106" target="107">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="117" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="107" target="108">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="118" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="108" target="109">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="119" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="109" target="110">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="CV_Tracking" name="CV_Vehicle_tracking.py">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="200" />
+        <mxCell id="201" parent="200" />
+        
+        <mxCell id="202" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="201">
+          <mxGeometry x="360" y="40" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="203" value="Load YOLO Model&#xa;(v12 or v8)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="120" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="204" value="User Selects ROI&#xa;(Carpark Area)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="201">
+          <mxGeometry x="330" y="210" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="205" value="Read Next Frame" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="300" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="206" value="Frame Available?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="201">
+          <mxGeometry x="350" y="390" width="100" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Loop Body -->
+        <mxCell id="207" value="YOLO Detection" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="510" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="208" value="Filter by ROI" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="590" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="209" value="Update Object Tracker&#xa;(Assign IDs)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="670" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="210" value="Store Frame Data" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="340" y="750" width="120" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- End Path -->
+        <mxCell id="211" value="Save CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="201">
+          <mxGeometry x="520" y="405" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="212" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="201">
+          <mxGeometry x="660" y="410" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="213" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="202" target="203"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="214" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="203" target="204"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="215" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="204" target="205"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="216" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="205" target="206"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Loop Yes -->
+        <mxCell id="217" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="206" target="207"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="218" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="207" target="208"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="219" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="208" target="209"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="220" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="209" target="210"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Loop Back -->
+        <mxCell id="221" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="201" source="210" target="205">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="775" />
+              <mxPoint x="280" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Loop No (End) -->
+        <mxCell id="222" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="206" target="211"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="223" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="201" source="211" target="212"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="SyncVis" name="SyncVis.py">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="300" />
+        <mxCell id="301" parent="300" />
+        
+        <mxCell id="302" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="301">
+          <mxGeometry x="360" y="40" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="303" value="Read RAK Data&#xa;&amp; Detection CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="301">
+          <mxGeometry x="340" y="120" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="304" value="Find Start Point&#xa;(Threshold Check)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="301">
+          <mxGeometry x="340" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="305" value="Display Interactive Plot&#xa;(Matplotlib)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="301">
+          <mxGeometry x="340" y="280" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="306" value="User Adjusts Offset&#xa;(Slider)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="301">
+          <mxGeometry x="330" y="360" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="307" value="User Confirms Offset" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="301">
+          <mxGeometry x="330" y="440" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="308" value="Merge Data&#xa;(Sync Timestamps)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="301">
+          <mxGeometry x="340" y="520" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="309" value="Export CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="301">
+          <mxGeometry x="340" y="600" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="310" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="301">
+          <mxGeometry x="360" y="680" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="311" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="302" target="303"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="312" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="303" target="304"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="313" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="304" target="305"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="314" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="305" target="306"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="315" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="306" target="307"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="316" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="307" target="308"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="317" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="308" target="309"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="318" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="301" source="309" target="310"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="DipAnalyzer" name="dip_analyzer.py">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="400" />
+        <mxCell id="401" parent="400" />
+        
+        <mxCell id="402" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="401">
+          <mxGeometry x="360" y="40" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="403" value="Load Synced CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="340" y="120" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="404" value="Detect Dips&#xa;(Depth &lt; Baseline)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="340" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="405" value="Merge &amp; Filter Dips" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="340" y="280" width="120" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Loop -->
+        <mxCell id="406" value="For Each Dip" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="401">
+          <mxGeometry x="350" y="370" width="100" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="407" value="Calculate Features&#xa;(Integral, Variance, Shape)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="330" y="490" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="408" value="Heuristic Classification&#xa;(Boxy/Flat?)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="330" y="570" width="140" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Loop Back -->
+        <mxCell id="409" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="401" source="408" target="406">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="595" />
+              <mxPoint x="280" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- End Loop -->
+        <mxCell id="410" value="Save Results CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="401">
+          <mxGeometry x="520" y="385" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="411" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="401">
+          <mxGeometry x="680" y="390" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="412" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="402" target="403"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="413" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="403" target="404"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="414" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="404" target="405"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="415" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="405" target="406"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="416" value="Next Dip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="406" target="407"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="417" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="407" target="408"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="418" value="Done" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="406" target="410"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="419" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="401" source="410" target="411"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="DipClassifier" name="dip_classifier.py">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="500" />
+        <mxCell id="501" parent="500" />
+        
+        <mxCell id="502" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="501">
+          <mxGeometry x="360" y="40" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="503" value="Load Analysis CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="120" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="504" value="Prepare Features &amp; Target" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="330" y="200" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="505" value="Split Train/Test" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="280" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="506" value="Train Random Forest" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="360" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="507" value="Train Decision Tree" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="440" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="508" value="Evaluate Models" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="520" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="509" value="Predict on Full Dataset" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="600" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="510" value="Save ML Results CSV" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="501">
+          <mxGeometry x="340" y="680" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="511" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="501">
+          <mxGeometry x="360" y="760" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="512" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="502" target="503"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="513" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="503" target="504"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="514" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="504" target="505"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="515" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="505" target="506"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="516" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="506" target="507"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="517" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="507" target="508"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="518" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="508" target="509"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="519" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="509" target="510"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="520" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="501" source="510" target="511"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="CountVehicles" name="count_vehicles_rak.py">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="600" />
+        <mxCell id="601" parent="600" />
+        
+        <mxCell id="602" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="601">
+          <mxGeometry x="360" y="20" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="603" value="Read RAK File" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="601">
+          <mxGeometry x="340" y="80" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="604" value="Calibration&#xa;(Mode of first 60s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="601">
+          <mxGeometry x="340" y="140" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="605" value="Set Constants&#xa;(DipLine, DistVar, etc.)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="601">
+          <mxGeometry x="340" y="200" width="120" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Main Loop -->
+        <mxCell id="606" value="For Each Point (i)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="601">
+          <mxGeometry x="350" y="270" width="100" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Dip Check -->
+        <mxCell id="607" value="Reading &lt; DipLine?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="601">
+          <mxGeometry x="340" y="360" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Start Dip -->
+        <mxCell id="608" value="Start Dip Event&#xa;(StartIdx = i - 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="601">
+          <mxGeometry x="340" y="450" width="120" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Merge Logic -->
+        <mxCell id="609" value="Find End of Dip&#xa;(Merge Gap Logic)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="601">
+          <mxGeometry x="340" y="530" width="120" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Validation -->
+        <mxCell id="610" value="Valid Duration &amp;&#xa;Max Depth?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="601">
+          <mxGeometry x="340" y="610" width="120" height="70" as="geometry" />
+        </mxCell>
+        
+        <!-- Classification -->
+        <mxCell id="611" value="Calculate Variance" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="601">
+          <mxGeometry x="340" y="710" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="612" value="Variance &lt; DistVar?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="601">
+          <mxGeometry x="340" y="780" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Outcomes -->
+        <mxCell id="613" value="Classify: VEHICLE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="601">
+          <mxGeometry x="200" y="860" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="614" value="Classify: PERSON/BIKE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="601">
+          <mxGeometry x="480" y="860" width="140" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- Loop Back Logic -->
+        <mxCell id="615" value="Advance Index (i)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="601">
+          <mxGeometry x="340" y="940" width="120" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- End -->
+        <mxCell id="616" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="601">
+          <mxGeometry x="520" y="280" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="617" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="602" target="603"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="618" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="603" target="604"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="619" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="604" target="605"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="620" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="605" target="606"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Loop Next -->
+        <mxCell id="621" value="Next" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="606" target="607"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <!-- Loop Done -->
+        <mxCell id="622" value="Done" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="606" target="616"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Dip Check -->
+        <mxCell id="623" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="607" target="608"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="624" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.5;" edge="1" parent="601" source="607" target="606">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="390" />
+              <mxPoint x="280" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="625" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="608" target="609"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="626" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="609" target="610"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Validation -->
+        <mxCell id="627" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="610" target="611"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="628" value="No (Noise)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=1;entryY=0.5;" edge="1" parent="601" source="610" target="615">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="645" />
+              <mxPoint x="640" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="629" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="611" target="612"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Classification -->
+        <mxCell id="630" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="612" target="613"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="631" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="601" source="612" target="614"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- Rejoin -->
+        <mxCell id="632" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.5;" edge="1" parent="601" source="613" target="615">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="260" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="633" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=1;entryY=0.5;" edge="1" parent="601" source="614" target="615">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="550" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Loop Back -->
+        <mxCell id="634" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.5;" edge="1" parent="601" source="615" target="606">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="960" />
+              <mxPoint x="160" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flowchart title="CarparkCV Vehicle Detection Pipeline">
+    <description>
+        Overarching flowchart for the vehicle detection and classification system.
+        This pipeline integrates Computer Vision (YOLO) with RAK Depth Sensor data 
+        to determine the best classification for vehicles.
+    </description>
+
+    <nodes>
+        <!-- Input Nodes -->
+        <node id="input_video" type="data">
+            <label>Video File</label>
+            <format>.mp4 / .mov</format>
+            <description>Raw footage of the carpark.</description>
+        </node>
+
+        <node id="input_rak" type="data">
+            <label>RAK Data File</label>
+            <format>.txt</format>
+            <description>Raw distance/time data from RAK sensor.</description>
+        </node>
+
+        <!-- Step 1: Vehicle Tracking -->
+        <node id="process_cv" type="process">
+            <label>Vehicle Tracker</label>
+            <script>CV_Vehicle_tracking.py</script>
+            <function>detect_objects_in_video</function>
+            <description>
+                Uses YOLO (v12/v8) to detect and track objects (cars, people, bicycles).
+                Generates frame-by-frame counts and timestamps.
+            </description>
+        </node>
+
+        <node id="data_detection_csv" type="data">
+            <label>Detection Results</label>
+            <filename>detection_results.csv</filename>
+            <description>CSV containing timestamps and object counts per frame.</description>
+        </node>
+
+        <!-- Step 2: Synchronization -->
+        <node id="process_sync" type="process">
+            <label>Data Synchronization</label>
+            <script>SyncVis.py</script>
+            <description>
+                Aligns RAK sensor timestamps with Video timestamps.
+                Merges depth data into the detection CSV.
+            </description>
+        </node>
+
+        <node id="data_synced_csv" type="data">
+            <label>Synced Detection &amp; Depth</label>
+            <filename>detection_results_with_depth.csv</filename>
+            <description>Combined data: CV detections + RAK depth readings.</description>
+        </node>
+
+        <!-- Step 3: Dip Analysis -->
+        <node id="process_analysis" type="process">
+            <label>Dip Analyzer</label>
+            <script>dip_analyzer.py</script>
+            <class>DipAnalyzer</class>
+            <description>
+                Analyzes depth "dips" (objects passing sensor).
+                Calculates features: Duration, Max Depth, Variance, Fill Factor.
+            </description>
+        </node>
+
+        <node id="data_analysis_csv" type="data">
+            <label>Dip Analysis Results</label>
+            <filename>dip_analysis_results.csv</filename>
+            <description>Feature vectors for each detected event/dip.</description>
+        </node>
+
+        <!-- Step 4: ML Classification -->
+        <node id="process_ml" type="process">
+            <label>ML Classifier</label>
+            <script>dip_classifier.py</script>
+            <function>train_classifier</function>
+            <description>
+                Applies Random Forest/Decision Tree models.
+                Classifies events as "Vehicle" or "Non-Vehicle" based on extracted features.
+            </description>
+        </node>
+
+        <node id="output_final" type="data">
+            <label>Final Classification Results</label>
+            <filename>dip_analysis_results_with_ml.csv</filename>
+            <description>
+                Final output containing original data plus ML predictions 
+                (is_vehicle probability).
+            </description>
+        </node>
+    </nodes>
+
+    <edges>
+        <!-- Flow Connections -->
+        <edge source="input_video" target="process_cv" />
+        <edge source="process_cv" target="data_detection_csv" />
+        
+        <edge source="data_detection_csv" target="process_sync" />
+        <edge source="input_rak" target="process_sync" />
+        <edge source="process_sync" target="data_synced_csv" />
+        
+        <edge source="data_synced_csv" target="process_analysis" />
+        <edge source="process_analysis" target="data_analysis_csv" />
+        
+        <edge source="data_analysis_csv" target="process_ml" />
+        <edge source="process_ml" target="output_final" />
+    </edges>
+</flowchart>

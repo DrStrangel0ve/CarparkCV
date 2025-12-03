@@ -170,10 +170,26 @@ class DipAnalyzer:
         
         gradients = np.diff(depth_values)
         return float(np.mean(np.abs(gradients)))
+
+    def calculate_max_depth_gradient(self, depth_values):
+        """Calculate maximum gradient (rate of change) of depth."""
+        if len(depth_values) < 2:
+            return 0.0
+        
+        gradients = np.diff(depth_values)
+        return float(np.max(np.abs(gradients)))
     
     def calculate_depth_variance(self, depth_values):
         """Calculate variance of depth values."""
         return float(np.var(depth_values))
+
+    def calculate_depth_fourth_moment(self, depth_values):
+        """Calculate the 4th moment of depth values (punishes outliers more)."""
+        if len(depth_values) < 1:
+            return 0.0
+        mean_val = np.mean(depth_values)
+        fourth_moment = np.mean((depth_values - mean_val) ** 4)
+        return float(fourth_moment)
     
     def calculate_dip_duration(self, time_values):
         """Calculate dip duration in seconds."""
@@ -281,7 +297,9 @@ class DipAnalyzer:
             dip_duration = self.calculate_dip_duration(time_values)
             line_integral = self.calculate_line_integral(depth_values)
             depth_gradient = self.calculate_depth_gradient(depth_values)
+            max_depth_gradient = self.calculate_max_depth_gradient(depth_values)
             depth_variance = self.calculate_depth_variance(depth_values)
+            depth_fourth_moment = self.calculate_depth_fourth_moment(depth_values)
             min_depth = float(depth_values.min())
             
             # Shape metrics
@@ -301,7 +319,9 @@ class DipAnalyzer:
                 'dip_duration_seconds': dip_duration,
                 'line_integral': line_integral,
                 'avg_depth_gradient': depth_gradient,
+                'max_depth_gradient': max_depth_gradient,
                 'depth_variance': depth_variance,
+                'depth_fourth_moment': depth_fourth_moment,
                 'avg_vehicles': avg_vehicles,
                 'avg_bicycles': avg_bicycles,
                 'avg_people': avg_people,
@@ -357,7 +377,7 @@ class DipAnalyzer:
 def main():
     """Main entry point."""
     # Configuration parameters
-    input_csv = "detection_results_with_depth.csv"
+    input_csv = "rak_data_with_interpolated_cv.csv"
     baseline = 220
     min_duration = 0.2
     merge_gap = 0.3

@@ -191,5 +191,37 @@ if corrected_times is not None:
     output_csv = SCRIPT_DIR / 'detection_results_with_depth.csv'
     df_detections.to_csv(output_csv, index=False)
     print(f"\nMerged data exported to: {output_csv}")
+
+    # --- NEW: Export RAK data with interpolated CV data ---
+    print("\nGenerating RAK-centric dataset (interpolating CV data)...")
+    
+    # 1. Calculate Video Time for each RAK point
+    # synced_time (RAK timeline) = video_time + offset
+    # video_time = synced_time - offset
+    # corrected_times is the RAK timeline
+    rak_video_times = corrected_times - final_offset
+    
+    # 2. Create DataFrame
+    df_rak_interpolated = pd.DataFrame({
+        'time_seconds': rak_video_times,
+        'ultrawide_depth_m': corrected_distances
+    })
+    
+    # 3. Interpolate CV columns
+    cv_times = df_detections['time_seconds'].values
+    cols_to_interpolate = ['vehicles_in_frame', 'people_in_frame', 'bicycles_in_frame']
+    
+    for col in cols_to_interpolate:
+        if col in df_detections.columns:
+            cv_values = df_detections[col].values
+            # Linear interpolation, fill with 0 outside video range
+            interpolated_values = np.interp(rak_video_times, cv_times, cv_values, left=0, right=0)
+            df_rak_interpolated[col] = interpolated_values
+            
+    # 4. Save
+    output_rak_csv = SCRIPT_DIR / 'rak_data_with_interpolated_cv.csv'
+    df_rak_interpolated.to_csv(output_rak_csv, index=False)
+    print(f"RAK-centric data exported to: {output_rak_csv}")
+
 else:
     print("Could not find valid start point!")
