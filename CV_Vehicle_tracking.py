@@ -5,6 +5,15 @@ import numpy as np
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import torch
+try:
+    from cv_tracking_rules import TrackingRules
+except ImportError:
+    # Fallback if file not found (e.g. running in different context)
+    print("Warning: cv_tracking_rules.py not found. Using default simple rules.")
+    class TrackingRules:
+        def __init__(self, fps=30): pass
+        def is_valid_vehicle(self, history): return True
+        def is_valid_person(self, history): return True
 
 # Part 2: Run CV algorithm
 print("Starting vehicle detection analysis...")
@@ -126,22 +135,14 @@ def calculate_box_similarity(box1, box2):
     similarity = (area_similarity * 0.4) + (distance_similarity * 0.6)
     
     return similarity
-
-class ObjectTracker:
-    """
-    Persistent object tracker to prevent double counting (vehicles, people, bicycles)
-    
-    This tracker maintains the identity of objects across frames and only counts
-    them once when they first enter the ROI. It remembers objects even if they
-    temporarily leave the frame and reappear.
-    """
-    def __init__(self, retention_frames=30, similarity_threshold=0.7):
+    def __init__(self, retention_frames=30, similarity_threshold=0.7, fps=30.0):
         # Persistent tracking data: {object_id: {'bbox': bbox, 'class': class, 'last_frame': frame_num, 'counted': bool, 'matches': count}}
         self.active_objects = {}  
         self.retention_frames = retention_frames  # How many frames to remember
         self.similarity_threshold = similarity_threshold
         self.next_id = 1
         self.object_counts = {'person': 0, 'bicycle': 0, 'car': 0}  # Total counts
+        self.rules = TrackingRules(fps=fps)
         
     def update(self, current_frame, detected_objects):
         """
@@ -187,6 +188,11 @@ class ObjectTracker:
                 self.active_objects[object_id]['bbox'] = bbox
                 self.active_objects[object_id]['last_frame'] = current_frame
                 self.active_objects[object_id]['matches'] += 1
+                # Add to history
+                self.active_objects[object_id]['history'].append({
+                    'bbox': bbox,
+                    'frame': current_frame
+                })
             else:
                 # New object detected
                 object_id = self.next_id
@@ -200,18 +206,43 @@ class ObjectTracker:
                     'first_frame': current_frame,
                     'last_frame': current_frame,
                     'counted': False,
-                    'matches': 1
+                    'matches': 1,
+                    'history': [{'bbox': bbox, 'frame': current_frame}]
                 }
             
             # Create detection info
             detection_info = detected_obj.copy()
             detection_info['object_id'] = object_id
-            detection_info['is_new'] = not self.active_objects[object_id]['counted']
-            all_detections.append(detection_info)
+            detection_info['is_new'] = False # Will be set to True if counted this frame
             
-            # Count the object only once (on first detection)
-            if not self.active_objects[object_id]['counted']:
-                self.active_objects[object_id]['counted'] = True
+            # Check if object should be counted based on RULES
+            obj_data = self.active_objects[object_id]
+            if not obj_data['counted']:
+                should_count = False
+                
+                if obj_class == 'car':
+                    should_count = self.rules.is_valid_vehicle(obj_data['history'])
+                elif obj_class == 'person':
+                    should_count = self.rules.is_valid_person(obj_data['history'])
+                else:
+                    # Default for bicycles or others: just check min duration
+                    duration = (current_frame - obj_data['first_frame']) / self.rules.fps
+                    should_count = duration > 0.5
+                
+                if should_count:
+                    obj_data['counted'] = True
+                    self.object_counts[obj_class] += 1
+                    detection_info['is_new'] = True
+                    newly_counted.append(detection_info)
+            
+            all_detections.append(detection_info)
+        
+        return {
+            'all_detections': all_detections,
+            'newly_counted': newly_counted,
+            'counts': self.object_counts.copy(),
+            'total': sum(self.object_counts.values())
+        }       self.active_objects[object_id]['counted'] = True
                 self.object_counts[obj_class] += 1
                 newly_counted.append(detection_info)
         
@@ -260,8 +291,8 @@ def detect_objects_in_video(video_path, output_csv="detection_results.csv", show
         print(f"Starting from {start_time_seconds}s (frame {start_frame})")
         frame_count = start_frame
     else:
-        frame_count = 0
-    
+    # Initialize object tracker
+    object_tracker = ObjectTracker(retention_frames=int(fps * 2), similarity_threshold=0.6, fps=fps)  # 2 second retention
     # Get ROI if not provided
     if roi_coords is None:
         print("No ROI specified. Selecting carpark area...")

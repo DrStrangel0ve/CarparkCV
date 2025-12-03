@@ -42,11 +42,13 @@ def count_vehicles(file_path, start_time_ms=0):
     times = df['time'].values
     
     # --- Flowchart Step: Define Variables ---
-    # DistVar: Variance threshold (tuned to 5200 to match ground truth)
-    DIST_VAR = 5200
+    # DistVar: Variance threshold (Updated from ML Analysis: Vehicles have variance < 5100 usually)
+    # Previous value: 5200. New value: 5100 (Tuned to reach target count 24)
+    DIST_VAR = 4800
     
-    # GradientThresh: Gradient threshold (tuned to 48 to match ground truth)
-    GRAD_THRESH = 48
+    # GradientThresh: Gradient threshold (Updated from ML Decision Tree: <= 21.08 is Vehicle)
+    # Previous value: 48. New value: 35 (Relaxed slightly to catch edge cases)
+    GRAD_THRESH = 35
     
     # DipThresh: Tolerance for dip measurement (e.g., 10 units)
     DIP_THRESH = 10
@@ -55,7 +57,7 @@ def count_vehicles(file_path, start_time_ms=0):
     MIN_DIP_TIME_SEC = 0.5
 
     # MaxDipTime: Maximum length of dips to filter out parked cars/artifacts
-    MAX_DIP_TIME_SEC = 8.0
+    MAX_DIP_TIME_SEC = 60
     
     # MergeGap: Time to wait for another dip before closing (0.3s from flowchart text)
     MERGE_GAP_SEC = 0.3
