@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy import integrate
 from pathlib import Path
 
@@ -327,7 +329,8 @@ class DipAnalyzer:
                 'avg_people': avg_people,
                 'frame_count': end_idx - start_idx + 1,
                 'start_frame_idx': start_idx,
-                'end_frame_idx': end_idx
+                'end_frame_idx': end_idx,
+                'dip_array': depth_values.tolist()
             }
             
             # Add shape metrics to result
@@ -337,6 +340,54 @@ class DipAnalyzer:
         
         self.results_df = pd.DataFrame(results)
         return self.results_df
+
+    def save_plots(self, output_path):
+        """Generate and save plots for each detected dip to a PDF file."""
+        if not self.dips:
+            print("No dips to plot.")
+            return
+            
+        print(f"Generating plots to {output_path}...")
+        
+        with PdfPages(output_path) as pdf:
+            for i, (start_idx, end_idx) in enumerate(self.dips):
+                dip_slice = self.df.iloc[start_idx:end_idx + 1]
+                
+                time_col = self.col_map['time']
+                depth_col = self.col_map['depth']
+                
+                times = dip_slice[time_col]
+                depths = dip_slice[depth_col]
+                
+                # Get classification if available
+                if self.results_df is not None and i < len(self.results_df):
+                    obj_type = self.results_df.iloc[i]['object']
+                    category = self.results_df.iloc[i].get('shape_category', 'N/A')
+                else:
+                    obj_type = self.classify_object(dip_slice)
+                    category = 'N/A'
+                
+                plt.figure(figsize=(10, 6))
+                plt.plot(times, depths, 'b-', label='Depth')
+                plt.axhline(y=self.baseline_depth, color='r', linestyle='--', label='Baseline')
+                
+                # Invert y axis to show "dip" as a bump if desired, but standard is fine.
+                # Let's keep standard depth (y-axis) but maybe invert it visually?
+                # Usually depth 0 is camera, larger is further.
+                # Objects are closer, so smaller depth.
+                # So the curve goes DOWN.
+                plt.gca().invert_yaxis() # Make it look like a bump (upwards)
+                
+                plt.title(f"Dip #{i+1}: {obj_type} ({category})\nDuration: {times.iloc[-1]-times.iloc[0]:.2f}s")
+                plt.xlabel("Time (s)")
+                plt.ylabel("Depth (m) [Inverted]")
+                plt.legend()
+                plt.grid(True)
+                
+                pdf.savefig()
+                plt.close()
+                
+        print(f"Plots saved to {output_path}")
     
     def save_results(self, output_path):
         """Save analysis results to CSV file."""
@@ -397,15 +448,19 @@ def main():
         input_path = Path(input_csv)
         output_csv = str(input_path.parent / f"{input_path.stem}_dips.csv")
     
+    output_pdf = str(Path(output_csv).with_suffix('.pdf'))
+
     try:
         # Create analyzer and run analysis
         analyzer = DipAnalyzer(input_csv, baseline, min_duration=min_duration, merge_gap=merge_gap)
         analyzer.detect_dips()
         analyzer.analyze_dips()
         analyzer.save_results(output_csv)
+        analyzer.save_plots(output_pdf)
         analyzer.get_summary_statistics()
         
         print(f"\nAnalysis complete! Results saved to {output_csv}")
+        print(f"Plots saved to {output_pdf}")
     
     except Exception as e:
         print(f"Error during analysis: {e}")
