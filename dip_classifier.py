@@ -23,7 +23,6 @@ def train_classifier(input_csv, output_csv=None):
     # Features to use for classification
     feature_cols = [
         'dip_duration_seconds',
-        'max_depth',
         'min_depth',
         'avg_depth',
         'line_integral',

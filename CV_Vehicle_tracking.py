@@ -242,15 +242,6 @@ def calculate_box_similarity(box1, box2):
             'newly_counted': newly_counted,
             'counts': self.object_counts.copy(),
             'total': sum(self.object_counts.values())
-        }       self.active_objects[object_id]['counted'] = True
-                self.object_counts[obj_class] += 1
-                newly_counted.append(detection_info)
-        
-        return {
-            'all_detections': all_detections,
-            'newly_counted': newly_counted,
-            'counts': self.object_counts.copy(),
-            'total': sum(self.object_counts.values())
         }
     
     def get_counts(self):
@@ -291,6 +282,8 @@ def detect_objects_in_video(video_path, output_csv="detection_results.csv", show
         print(f"Starting from {start_time_seconds}s (frame {start_frame})")
         frame_count = start_frame
     else:
+        frame_count = 0
+
     # Initialize object tracker
     object_tracker = ObjectTracker(retention_frames=int(fps * 2), similarity_threshold=0.6, fps=fps)  # 2 second retention
     # Get ROI if not provided

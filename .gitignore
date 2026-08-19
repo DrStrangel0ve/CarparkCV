@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.idea/
+.vscode/
+
+# Local recordings and generated visualizations
+*.mp4
+*.mov
+detection_timeline.png
+cropped_*.mp4
