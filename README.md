@@ -12,7 +12,15 @@ CarparkCV is an end-to-end vehicle-detection prototype that compares camera-base
 
 ## Included experiment result
 
-On the checked-in set of 45 labeled sensor dips, the Random Forest experiment reaches **96% mean accuracy in five-fold cross-validation** and **93% accuracy on the fixed held-out split**. This is a small project dataset rather than an external benchmark, but it demonstrates that the extracted ultrasonic features separate vehicle events from other observed objects in these trials.
+On the checked-in set of 45 labeled sensor dips (24 vehicle and 21 non-vehicle), the Random Forest experiment reaches **96% mean accuracy in five-fold cross-validation** and **93% accuracy on the fixed held-out split**. This is a small project dataset rather than an external benchmark, but it demonstrates that the extracted ultrasonic features separate vehicle events from other observed objects in these trials.
+
+The underlying EPICS-SCAN documentation provides the signal-level evidence behind that result. The examples below show a sustained 2.57-second vehicle return beside a much shorter 0.33-second pedestrian return; duration is only one of the nine features evaluated by the classifier.
+
+| Labeled vehicle dip | Labeled pedestrian dip |
+| --- | --- |
+| ![Ultrasonic distance trace for a labeled vehicle event](docs/evidence/vehicle-dip.png) | ![Ultrasonic distance trace for a labeled pedestrian event](docs/evidence/pedestrian-dip.png) |
+
+**Evidence provenance:** figures are rendered without alteration from pages 1-2 of the EPICS-SCAN [`dip_analysis_results.pdf`](https://github.com/EPICS-SCAN/SCAN-Documents/blob/main/Algorithm/Results/dip_analysis_results.pdf). The source repository also contains the [45-row feature dataset](https://github.com/EPICS-SCAN/SCAN-Documents/blob/main/Algorithm/Results/dip_analysis_results.csv), [synchronized CV/depth output](https://github.com/EPICS-SCAN/SCAN-Documents/blob/main/Algorithm/Results/detection_results_with_depth.csv), and the [documented end-to-end process](https://github.com/EPICS-SCAN/SCAN-Documents/blob/main/Algorithm/Overall%20Process.pdf). These are team-project artifacts; this repository presents my implementation work within that system.
 
 ```mermaid
 flowchart LR
